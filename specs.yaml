@@ -1,0 +1,8 @@
+file_thth: thth_0529.npy
+file_thetas: thetas_0529.npy
+file_points: points.npy
+file_lines: lines.npy
+nu_half: 326.5e+06
+veff: 305000.
+thth_vmin: 15.3
+thth_vmax: 18.6
