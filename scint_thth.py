@@ -168,7 +168,7 @@ class thth():
         self.figure.canvas.mpl_connect('button_press_event', self.onclick)
         
         #update plots
-        self.update_mu()
+        self.update_mu(theta,alpha,beta)
         
     def onclick(self,event):
         if str(event.button)=='MouseButton.RIGHT':
@@ -183,7 +183,7 @@ class thth():
     def update_curve_widget_values(self,event):
         self.update_thth_curve(self.slider_th.val,self.slider_alpha.val,self.slider_beta.val)
         self.images.update_image_plot(self.slider_th.val,self.slider_alpha.val)
-        self.update_mu()
+        self.update_mu(self.slider_th.val,self.slider_alpha.val,self.slider_beta.val)
         
     def reset_curve_widget_values(self,event):
         self.slider_th.reset()
@@ -283,7 +283,7 @@ class thth():
         self.slider_th.set_val(theta)
         self.slider_alpha.set_val(alpha)
         self.slider_beta.set_val(beta)
-        self.update_mu()
+        self.update_mu(theta,alpha,beta)
         self.figure.canvas.draw_idle()
         
     def delete_line(self,event):
@@ -320,8 +320,7 @@ class thth():
         self.update_mus()
         self.figure.canvas.draw_idle()
         
-    def update_mu(self):
-        theta,alpha,beta = self.images.get_image_array()
+    def update_mu(self,theta,alpha,beta):
         th1,th2 = self.get_thth_curve(theta,alpha,beta)
         minth = np.min(self.thetas)
         maxth = np.max(self.thetas)
