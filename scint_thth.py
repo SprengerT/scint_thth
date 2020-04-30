@@ -27,7 +27,10 @@ class thth():
         self.veff = specs['veff']
         self.ax = ax
         self.figure = figure
+        #initialize images
         self.images = images
+        i_line,i_point = self.images.tidy_up()
+        #initialize mu
         self.brightness = brightness
         #load thth
         self.thth = np.load(file_thth)
@@ -57,18 +60,19 @@ class thth():
         self.plot_thth_grid = self.ax.pcolormesh((self.thetas-offset),(self.thetas-offset),np.swapaxes(self.thth_log10,0,1),cmap=cmap,vmin=vmin,vmax=vmax)
         self.figure.colorbar(self.plot_thth_grid, ax=self.ax)
         
+        #plot found lines
+        self.plot_lines = []
+        self.update_lines()
+        
         #plot thth curve
-        th1,th2 = self.get_thth_curve(0.,0.,0.)
+        theta,alpha,beta = self.images.get_image_array()
+        th1,th2 = self.get_thth_curve(theta,alpha,beta)
         self.plot_thth_curve, = self.ax.plot(th1,th2,color='red',linestyle='-',marker='o',markersize=0,alpha=0.5)
         
         #plot thth point
         points = self.images.get_points_array()
-        self.plot_point, = self.ax.plot(points[0,0],points[0,1],color='red',linestyle='',marker='o',markersize=3, fillstyle='none',alpha=0.5)
+        self.plot_point, = self.ax.plot(points[i_point,0],points[i_point,1],color='red',linestyle='',marker='o',markersize=3, fillstyle='none',alpha=0.5)
         self.plot_points, = self.ax.plot(points[:,0],points[:,1],color='lightblue',linestyle='',marker='o',markersize=3, fillstyle='none',alpha=0.5)
-        
-        #plot found lines
-        self.plot_lines = []
-        self.update_lines()
         
         #plot brightness distributions
         self.update_mus()
@@ -141,10 +145,10 @@ class thth():
         self.box_th1 = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[4],xwidth,ywidth]), r'$\theta_1$', initial=str(points[0,0]))
         self.box_th2 = mpl.widgets.TextBox(plt.axes([xpos[1],ypos[4],xwidth,ywidth]), r'$\theta_2$', initial=str(points[0,1]))
         self.button_fit_points = mpl.widgets.Button(plt.axes([xpos[2],ypos[4],xwidth,ywidth]), r'fit points')
-        self.box_point_number = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[5],xwidth,ywidth]), r'#p', initial="0")
+        self.box_point_number = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[5],xwidth,ywidth]), r'#p', initial=self.images.i_point)
         self.button_delete_point = mpl.widgets.Button(plt.axes([xpos[1],ypos[5],xwidth,ywidth]), r'delete point')
         self.button_save_point = mpl.widgets.Button(plt.axes([xpos[2],ypos[5],xwidth,ywidth]), r'save point')
-        self.box_line_number = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[6],xwidth,ywidth]), r'#l', initial="0")
+        self.box_line_number = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[6],xwidth,ywidth]), r'#l', initial=self.images.i_line)
         self.button_delete_line = mpl.widgets.Button(plt.axes([xpos[1],ypos[6],xwidth,ywidth]), r'delete line')
         self.button_save_line = mpl.widgets.Button(plt.axes([xpos[2],ypos[6],xwidth,ywidth]), r'save line')
         #tell widgets what to do on use
@@ -396,17 +400,54 @@ class images():
         #initialize plot
         self.ax.set_xlim([np.min(self.thetas),np.max(self.thetas)])
         self.ax.set_ylim([np.min(self.thetas),np.max(self.thetas)])
-        self.ax.set_xlabel(r"$\theta_x$ [mas]")
-        self.ax.set_ylabel(r"$\theta_y$ [mas]")
+        self.ax.set_xlabel(r"$\theta_\parallel$ [mas]")
+        self.ax.set_ylabel(r"$\theta_\perp$ [mas]")
         self.ax.set_title(r'screen')
-        self.ax.axvline(0.,color='black',alpha=0.3)
+        self.ax.axhline(0.,color='black',alpha=0.3)
         th_par,th_ort = self.get_images_pos_array()
-        self.plot_images, = self.ax.plot(th_ort,th_par,color='black',linestyle='',marker='o',markersize=2,alpha=0.5)
-        self.plot_image, = self.ax.plot(th_ort[self.i_line],th_par[self.i_line],color='red',linestyle='',marker='o',markersize=3)
+        self.plot_images, = self.ax.plot(th_par,th_ort,color='black',linestyle='',marker='o',markersize=2,alpha=0.5)
+        self.plot_image, = self.ax.plot(th_par[self.i_line],th_ort[self.i_line],color='red',linestyle='',marker='o',markersize=3)
         
     def save_data(self):
         np.save(self.file_points,np.array(self.matrix))
         np.save(self.file_lines,np.array(self.images))
+        
+    def tidy_up(self):
+        """
+        Removes unused lines that only consist of the image at the origin.
+        Order lines by increasing theta and points by increasing theta_1.
+        Moves to newly created line.
+        """
+        #remove empty lines
+        indices = []
+        for i_line in range(self.N_lines):
+            if self.matrix[i_line]==[[0.,0.]]:
+                indices.append(i_line)
+        for index in sorted(indices, reverse=True):
+            del self.matrix[index]
+            del self.images[index]
+        #order lines
+        ar_thetas = np.array(self.images)[:,0]
+        indices = np.argsort(ar_thetas)
+        im = []
+        mat = []
+        for index in indices:
+            im.append(self.images[index])
+            mat.append(self.matrix[index])
+        self.images = im
+        self.matrix = mat
+        #order points
+        for i_line in range(self.N_lines):
+            ar_th1 = np.array(self.matrix[i_line])[:,0]
+            indices = np.argsort(ar_th1)
+            points = []
+            for index in indices:
+                points.append(self.matrix[i_line][index])
+            self.matrix[i_line] = points
+        #move to a new line
+        self.N_lines = len(self.matrix)
+        self.change_line(self.N_lines)
+        return (self.i_line,self.i_point)
         
     def fit_thth_curve(self,fitfunc,theta,alpha,beta):
         data = np.array(self.matrix[self.i_line])
@@ -459,8 +500,10 @@ class images():
         self.N_points = len(self.matrix[self.i_line])
         self.i_point = self.N_points - 1
         th_par,th_ort = self.get_images_pos_array()
-        self.plot_images.set_xdata(th_ort)
-        self.plot_images.set_ydata(th_par)
+        self.plot_images.set_xdata(th_par)
+        self.plot_images.set_ydata(th_ort)
+        theta,alpha,beta = self.images[self.i_line]
+        self.update_image_plot(theta,alpha)
         return (self.i_line,self.i_point)
         
     def delete_line(self):
@@ -476,8 +519,8 @@ class images():
     def update_image_plot(self,theta,alpha):
         th_par = theta*np.cos(np.deg2rad(alpha))
         th_ort = theta*np.sin(np.deg2rad(alpha))
-        self.plot_image.set_xdata(th_ort)
-        self.plot_image.set_ydata(th_par)
+        self.plot_image.set_xdata(th_par)
+        self.plot_image.set_ydata(th_ort)
         self.figure.canvas.draw_idle()
         
     def get_images_pos_array(self):
