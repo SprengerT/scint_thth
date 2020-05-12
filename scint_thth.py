@@ -426,6 +426,7 @@ class images():
         for index in sorted(indices, reverse=True):
             del self.matrix[index]
             del self.images[index]
+        self.N_lines = len(self.matrix)
         #order lines
         ar_thetas = np.array(self.images)[:,0]
         indices = np.argsort(ar_thetas)
