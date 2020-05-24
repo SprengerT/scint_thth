@@ -4,5 +4,6 @@ file_points: points.npy
 file_lines: lines.npy
 nu_half: 326.5e+06
 veff: 305000.
+beta: -28.6
 thth_vmin: 15.3
 thth_vmax: 18.6

@@ -25,6 +25,7 @@ class thth():
         file_thetas = specs['file_thetas']
         self.nu_half = specs['nu_half']
         self.veff = specs['veff']
+        self.beta = specs['beta']
         self.ax = ax
         self.figure = figure
         #initialize images
@@ -65,8 +66,8 @@ class thth():
         self.update_lines()
         
         #plot thth curve
-        theta,alpha,beta = self.images.get_image_array()
-        th1,th2 = self.get_thth_curve(theta,alpha,beta)
+        theta,gamma = self.images.get_image_array()
+        th1,th2 = self.get_thth_curve(theta,gamma)
         self.plot_thth_curve, = self.ax.plot(th1,th2,color='red',linestyle='-',marker='o',markersize=0,alpha=0.5)
         
         #plot thth point
@@ -77,14 +78,10 @@ class thth():
         #plot brightness distributions
         self.update_mus()
 
-    def get_thth_curve(self,theta,alpha,beta):
-        #load data
-        th_par = theta*np.cos(np.deg2rad(alpha))
-        th_ort = theta*np.sin(np.deg2rad(alpha))
-        om = np.tan(np.deg2rad(beta))
+    def get_thth_curve(self,theta,gamma):
         #create thth coordinates
-        th1 = 0.5*((self.thetas**2-th_par**2-th_ort**2)/(self.thetas-th_par-om*th_ort)+self.thetas-th_par-om*th_ort)
-        th2 = 0.5*((self.thetas**2-th_par**2-th_ort**2)/(self.thetas-th_par-om*th_ort)-self.thetas+th_par+om*th_ort)
+        th1 = 0.5*((self.thetas**2-theta**2)/(self.thetas-gamma*theta)+self.thetas-gamma*theta)
+        th2 = 0.5*((self.thetas**2-theta**2)/(self.thetas-gamma*theta)-self.thetas+gamma*theta)
         data = [th1,th2]
         return data
         
@@ -92,11 +89,11 @@ class thth():
         data = np.asarray(self.images.images)
         lines = np.empty((len(data),2,self.N_th),dtype=float)
         for index in range(len(data)):
-            lines[index,:,:] = np.array(self.get_thth_curve(data[index,0],data[index,1],data[index,2]))
+            lines[index,:,:] = np.array(self.get_thth_curve(data[index,0],data[index,1]))
         return lines
         
-    def update_thth_curve(self,theta,alpha,beta):
-        th1,th2 = self.get_thth_curve(theta,alpha,beta)
+    def update_thth_curve(self,theta,gamma):
+        th1,th2 = self.get_thth_curve(theta,gamma)
         self.plot_thth_curve.set_xdata(th1)
         self.plot_thth_curve.set_ydata(th2)
         self.figure.canvas.draw_idle()
@@ -131,29 +128,29 @@ class thth():
         xpos = [xmin+i*(xwidth+xspace) for i in range(ncols)]
         ypos = [ymin+i*(ywidth+yspace) for i in range(nrows)]
         #load data
-        theta,alpha,beta = self.images.get_image_array()
-        self.update_thth_curve(theta,alpha,beta)
+        theta,gamma = self.images.get_image_array()
+        self.update_thth_curve(theta,gamma)
         points = self.images.get_points_array()
         #initialize widgets for the curve
-        self.slider_th = mpl.widgets.Slider(plt.axes([xpos[0],ypos[2],xfullwidth,ywidth]),r'$\theta$',-30.,30.,valinit=theta)
-        self.slider_alpha = mpl.widgets.Slider(plt.axes([xpos[0],ypos[1],xfullwidth,ywidth]),r'$\alpha$',-90.,90.,valinit=alpha)
-        self.slider_beta = mpl.widgets.Slider(plt.axes([xpos[0],ypos[0],xfullwidth,ywidth]),r'$\beta$',-90.,90.,valinit=beta)
+        self.slider_th = mpl.widgets.Slider(plt.axes([xpos[0],ypos[2],xfullwidth,ywidth]),r'$\theta$',0.,30.,valinit=theta)
+        self.slider_gamma = mpl.widgets.Slider(plt.axes([xpos[0],ypos[1],xfullwidth,ywidth]),r'$\gamma$',-1./np.cos(np.deg2rad(self.beta)),1./np.cos(np.deg2rad(self.beta)),valinit=gamma)
+        self.slider_beta = mpl.widgets.Slider(plt.axes([xpos[0],ypos[0],xfullwidth,ywidth]),r'$\beta$',-180.,180.,valinit=self.beta)
         self.button_reset = mpl.widgets.Button(plt.axes([xpos[2],ypos[3],xwidth,ywidth]), 'Reset')
         self.button_anchor = mpl.widgets.Button(plt.axes([xpos[1],ypos[3],xwidth,ywidth]), 'Anchor')
-        self.box_th_range = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[3],xwidth,ywidth]), r'$\Delta\theta$', initial="60.0")
+        self.box_th_range = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[3],xwidth,ywidth]), r'$\Delta\theta$', initial="30.0")
         #initialize widgets for the images
         self.box_th1 = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[4],xwidth,ywidth]), r'$\theta_1$', initial=str(points[0,0]))
         self.box_th2 = mpl.widgets.TextBox(plt.axes([xpos[1],ypos[4],xwidth,ywidth]), r'$\theta_2$', initial=str(points[0,1]))
         self.button_fit_points = mpl.widgets.Button(plt.axes([xpos[2],ypos[4],xwidth,ywidth]), r'fit points')
-        self.box_point_number = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[5],xwidth,ywidth]), r'#p', initial=self.images.i_point)
+        self.box_point_number = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[5],xwidth,ywidth]), r'#p', initial=str(self.images.i_point))
         self.button_delete_point = mpl.widgets.Button(plt.axes([xpos[1],ypos[5],xwidth,ywidth]), r'delete point')
         self.button_save_point = mpl.widgets.Button(plt.axes([xpos[2],ypos[5],xwidth,ywidth]), r'save point')
-        self.box_line_number = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[6],xwidth,ywidth]), r'#l', initial=self.images.i_line)
+        self.box_line_number = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[6],xwidth,ywidth]), r'#l', initial=str(self.images.i_line))
         self.button_delete_line = mpl.widgets.Button(plt.axes([xpos[1],ypos[6],xwidth,ywidth]), r'delete line')
         self.button_save_line = mpl.widgets.Button(plt.axes([xpos[2],ypos[6],xwidth,ywidth]), r'save line')
         #tell widgets what to do on use
         self.slider_th.on_changed(self.update_curve_widget_values)
-        self.slider_alpha.on_changed(self.update_curve_widget_values)
+        self.slider_gamma.on_changed(self.update_curve_widget_values)
         self.slider_beta.on_changed(self.update_curve_widget_values)
         self.button_reset.on_clicked(self.reset_curve_widget_values)
         self.button_anchor.on_clicked(self.anchor_curve_widget_values)
@@ -172,7 +169,7 @@ class thth():
         self.figure.canvas.mpl_connect('button_press_event', self.onclick)
         
         #update plots
-        self.update_mu(theta,alpha,beta)
+        self.update_mu(theta,gamma)
         
     def onclick(self,event):
         if str(event.button)=='MouseButton.RIGHT':
@@ -185,18 +182,20 @@ class thth():
             self.figure.canvas.draw_idle()
         
     def update_curve_widget_values(self,event):
-        self.update_thth_curve(self.slider_th.val,self.slider_alpha.val,self.slider_beta.val)
-        self.images.update_image_plot(self.slider_th.val,self.slider_alpha.val)
-        self.update_mu(self.slider_th.val,self.slider_alpha.val,self.slider_beta.val)
+        self.update_thth_curve(self.slider_th.val,self.slider_gamma.val)
+        self.images.beta = self.slider_beta.val
+        self.images.update_image_plot(self.slider_th.val,self.slider_gamma.val)
+        self.images.update_images_plot()
+        self.update_mu(self.slider_th.val,self.slider_gamma.val)
         
     def reset_curve_widget_values(self,event):
         self.slider_th.reset()
-        self.slider_alpha.reset()
+        self.slider_gamma.reset()
         self.slider_beta.reset()
         
     def anchor_curve_widget_values(self,event):
         self.slider_th.valinit = self.slider_th.val
-        self.slider_alpha.valinit = self.slider_alpha.val
+        self.slider_gamma.valinit = self.slider_gamma.val
         self.slider_beta.valinit = self.slider_beta.val
         
     def rescale_curve_widget_th(self,text):
@@ -246,29 +245,24 @@ class thth():
         self.box_th2.set_val(points[number,1])
         self.figure.canvas.draw_idle()
         
-    def _fitfunc_thth_curve(self,th1,theta,alpha,beta):
-        #load data
-        th_par = theta*np.cos(np.deg2rad(alpha))
-        th_ort = theta*np.sin(np.deg2rad(alpha))
-        om = np.tan(np.deg2rad(beta))
+    def _fitfunc_thth_curve(self,th1,theta,gamma):
         #create thth coordinates
-        theta_a = 0.5*(th1+th_par+om*th_ort) + np.sqrt(0.25*(th1+th_par+om*th_ort)**2-th1*(th_par+om*th_ort)+(1.-om**2)/2.*th_ort**2-om*th_par*th_ort)
-        theta_b = 0.5*(th1+th_par+om*th_ort) - np.sqrt(0.25*(th1+th_par+om*th_ort)**2-th1*(th_par+om*th_ort)+(1.-om**2)/2.*th_ort**2-om*th_par*th_ort)
-        #th1 = 0.5*((self.thetas**2-th_par**2-th_ort**2)/(self.thetas-th_par-om*th_ort)+self.thetas-th_par-om*th_ort)
-        th2_a = 0.5*((theta_a**2-th_par**2-th_ort**2)/(theta_a-th_par-om*th_ort)-theta_a+th_par+om*th_ort)
-        th2_b = 0.5*((theta_b**2-th_par**2-th_ort**2)/(theta_b-th_par-om*th_ort)-theta_b+th_par+om*th_ort)
+        theta_a = 0.5*(th1+gamma*theta) + np.sqrt(0.25*(th1-gamma*theta)**2+(1.-gamma**2)/2.*theta**2)
+        theta_b = 0.5*(th1+gamma*theta) - np.sqrt(0.25*(th1-gamma*theta)**2+(1.-gamma**2)/2.*theta**2)
+        #compute both solutions for th2(th1) and choose the one closer to the current point
+        th2_a = 0.5*((theta_a**2-theta**2)/(theta_a-gamma*theta)-theta_a+gamma*theta)
+        th2_b = 0.5*((theta_b**2-theta**2)/(theta_b-gamma*theta)-theta_b+gamma*theta)
         th2 = np.empty(th1.shape,dtype=float)
         for i_th1 in range(len(th1)):
             th2_ab = np.array([th2_a[i_th1],th2_b[i_th1]])
-            index = np.nanargmin(np.abs(th2_ab-theta))
+            index = np.nanargmin(np.abs(th2_ab-theta*np.sign(gamma)))
             th2[i_th1] = th2_ab[index]
         return th2
         
     def fit_thth_curve(self,event):
-        theta,alpha,beta = self.images.fit_thth_curve(self._fitfunc_thth_curve,self.slider_th.val,self.slider_alpha.val,self.slider_beta.val)
+        theta,gamma = self.images.fit_thth_curve(self._fitfunc_thth_curve,self.slider_th.val,self.slider_gamma.val)
         self.slider_th.set_val(theta)
-        self.slider_alpha.set_val(alpha)
-        self.slider_beta.set_val(beta)
+        self.slider_gamma.set_val(gamma)
         
     def change_line_number(self,text):
         number = int(text)
@@ -281,13 +275,11 @@ class thth():
         self.box_th2.set_val(points[i_point,1])
         self.plot_points.set_xdata(points[:,0])
         self.plot_points.set_ydata(points[:,1])
-        theta,alpha,beta = self.images.get_image_array()
-        self.update_thth_curve(theta,alpha,beta)
+        theta,gamma = self.images.get_image_array()
         self.update_lines()
         self.slider_th.set_val(theta)
-        self.slider_alpha.set_val(alpha)
-        self.slider_beta.set_val(beta)
-        self.update_mu(theta,alpha,beta)
+        self.slider_gamma.set_val(gamma)
+        self.update_mu(theta,gamma)
         self.figure.canvas.draw_idle()
         
     def delete_line(self,event):
@@ -306,7 +298,7 @@ class thth():
         self.figure.canvas.draw_idle()
         
     def submit_line(self,event):
-        i_line,i_point = self.images.enter_line(self.slider_th.val,self.slider_alpha.val,self.slider_beta.val)
+        i_line,i_point = self.images.enter_line(self.slider_th.val,self.slider_gamma.val)
         self.images.save_data()
         self.change_point_number(i_point)
         points = self.images.get_points_array()
@@ -319,13 +311,12 @@ class thth():
         line = self.images.get_image_array()
         self.change_line_number(str(i_line))
         self.slider_th.set_val(line[0])
-        self.slider_alpha.set_val(line[1])
-        self.slider_beta.set_val(line[2])
+        self.slider_gamma.set_val(line[1])
         self.update_mus()
         self.figure.canvas.draw_idle()
         
-    def update_mu(self,theta,alpha,beta):
-        th1,th2 = self.get_thth_curve(theta,alpha,beta)
+    def update_mu(self,theta,gamma):
+        th1,th2 = self.get_thth_curve(theta,gamma)
         minth = np.min(self.thetas)
         maxth = np.max(self.thetas)
         spanth = maxth-minth
@@ -347,7 +338,7 @@ class thth():
         th1 = np.empty((N_lines,self.N_th),dtype=float)
         th2 = np.empty((N_lines,self.N_th),dtype=float)
         for index in range(N_lines):
-            th1[index,:],th2[index,:] = self.get_thth_curve(lines[index,0],lines[index,1],lines[index,2])
+            th1[index,:],th2[index,:] = self.get_thth_curve(lines[index,0],lines[index,1])
         minth = np.min(self.thetas)
         maxth = np.max(self.thetas)
         spanth = maxth-minth
@@ -373,12 +364,13 @@ class images():
         self.i_line = 0
         self.i_point = 0
         self.matrix = [[[0.,0.]]]
-        self.images = [[0.,0.,0.]]
+        self.images = [[0.,1.]]
         yaml = YAML(typ='safe')
         with open(file_specs,'r') as readfile:
             specs = yaml.load(readfile)
         self.nu_half = specs['nu_half']
         self.veff = specs['veff']
+        self.beta = specs['beta']
         file_thetas = specs['file_thetas']
         self.file_points = specs['file_points']
         self.file_lines = specs['file_lines']
@@ -404,9 +396,15 @@ class images():
         self.ax.set_ylabel(r"$\theta_\perp$ [mas]")
         self.ax.set_title(r'screen')
         self.ax.axhline(0.,color='black',alpha=0.3)
+        if -90.<self.beta<90.:
+            self.plot_veff, = self.ax.plot([0.,np.max(self.thetas)],[0.,np.max(self.thetas)*np.tan(np.deg2rad(self.beta))],color='black',linestyle='--',marker='',markersize=1,alpha=0.3,linewidth=1)
+        else:
+            self.plot_veff, = self.ax.plot([0.,np.min(self.thetas)],[0.,np.min(self.thetas)*np.tan(np.deg2rad(self.beta))],color='black',linestyle='--',marker='',markersize=1,alpha=0.3,linewidth=1)
         th_par,th_ort = self.get_images_pos_array()
-        self.plot_images, = self.ax.plot(th_par,th_ort,color='black',linestyle='',marker='o',markersize=2,alpha=0.5)
-        self.plot_image, = self.ax.plot(th_par[self.i_line],th_ort[self.i_line],color='red',linestyle='',marker='o',markersize=3)
+        self.plot_images1, = self.ax.plot(th_par[:,0],th_ort[:,0],color='black',linestyle='',marker='o',markersize=2,alpha=0.5)
+        self.plot_images2, = self.ax.plot(th_par[:,1],th_ort[:,1],color='black',linestyle='',marker='x',markersize=2,alpha=0.5)
+        self.plot_image1, = self.ax.plot(th_par[self.i_line,0],th_ort[self.i_line,0],color='red',linestyle='',marker='o',markersize=3)
+        self.plot_image2, = self.ax.plot(th_par[self.i_line,1],th_ort[self.i_line,1],color='red',linestyle='',marker='x',markersize=3)
         
     def save_data(self):
         np.save(self.file_points,np.array(self.matrix))
@@ -450,14 +448,13 @@ class images():
         self.change_line(self.N_lines)
         return (self.i_line,self.i_point)
         
-    def fit_thth_curve(self,fitfunc,theta,alpha,beta):
+    def fit_thth_curve(self,fitfunc,theta,gamma):
         data = np.array(self.matrix[self.i_line])
-        popt, pcov = curve_fit(fitfunc,data[:,0],data[:,1],p0=[theta,alpha,beta],bounds=([np.min(self.thetas),-90.,-90.],[np.max(self.thetas),90.,90.]))
+        popt, pcov = curve_fit(fitfunc,data[:,0],data[:,1],p0=[theta,gamma],bounds=([0.,-1./np.cos(np.deg2rad(self.beta))],[np.max(self.thetas),1./np.cos(np.deg2rad(self.beta))]))
         perr = np.sqrt(np.diag(pcov))
         fit_theta = popt[0]
-        fit_alpha = popt[1]
-        fit_beta = popt[2]
-        return (fit_theta,fit_alpha,fit_beta)
+        fit_gamma = popt[1]
+        return (fit_theta,fit_gamma)
         
     def enter_point(self,thx,thy):
         self.matrix[self.i_line][self.i_point] = [thx,thy]
@@ -482,8 +479,8 @@ class images():
             self.i_point -= 1
         return self.i_point
         
-    def enter_line(self,theta,alpha,beta):
-        self.images[self.i_line] = [theta,alpha,beta]
+    def enter_line(self,theta,gamma):
+        self.images[self.i_line] = [theta,gamma]
         i_line = self.i_line + 1
         self.change_line(i_line)
         return (self.i_line,self.i_point)
@@ -495,16 +492,13 @@ class images():
             self.N_lines += 1
             self.i_line = self.N_lines - 1
             data = np.asarray(self.images)
-            beta = np.mean(data[:,2])
-            self.images.append([0.,0.,beta])
+            self.images.append([0.,1.])
             self.matrix.append([[0.,0.]])
         self.N_points = len(self.matrix[self.i_line])
         self.i_point = self.N_points - 1
-        th_par,th_ort = self.get_images_pos_array()
-        self.plot_images.set_xdata(th_par)
-        self.plot_images.set_ydata(th_ort)
-        theta,alpha,beta = self.images[self.i_line]
-        self.update_image_plot(theta,alpha)
+        self.update_images_plot()
+        theta,gamma = self.images[self.i_line]
+        self.update_image_plot(theta,gamma)
         return (self.i_line,self.i_point)
         
     def delete_line(self):
@@ -517,19 +511,76 @@ class images():
         self.i_point = self.N_points - 1
         return (self.i_line,self.i_point)
         
-    def update_image_plot(self,theta,alpha):
-        th_par = theta*np.cos(np.deg2rad(alpha))
-        th_ort = theta*np.sin(np.deg2rad(alpha))
-        self.plot_image.set_xdata(th_par)
-        self.plot_image.set_ydata(th_ort)
+    def update_image_plot(self,theta,gamma):
+        #compute both possible alpha values and check if they are in range
+        if -1.<=gamma*np.cos(np.deg2rad(self.beta))<=1.:
+            alpha1 = self.beta - np.rad2deg(np.arccos(gamma*np.cos(np.deg2rad(self.beta))))
+            alpha2 = self.beta + np.rad2deg(np.arccos(gamma*np.cos(np.deg2rad(self.beta))))
+            if alpha1 > 180.:
+                alpha1 -= 360.
+            elif alpha1 <= 180.:
+                alpha1 += 360.
+            if alpha2 > 180.:
+                alpha2 -= 360.
+            elif alpha2 <= 180.:
+                alpha2 += 360.
+            th_par1 = theta*np.cos(np.deg2rad(alpha1))
+            th_ort1 = theta*np.sin(np.deg2rad(alpha1))
+            th_par2 = theta*np.cos(np.deg2rad(alpha2))
+            th_ort2 = theta*np.sin(np.deg2rad(alpha2))
+        else:
+            th_par1 = np.nan
+            th_ort1 = np.nan
+            th_par2 = np.nan
+            th_ort2 = np.nan
+        self.plot_image1.set_xdata(th_par1)
+        self.plot_image1.set_ydata(th_ort1)
+        self.plot_image2.set_xdata(th_par2)
+        self.plot_image2.set_ydata(th_ort2)
+        self.figure.canvas.draw_idle()
+        
+    def update_images_plot(self):
+        if -90.<self.beta<90.:
+            self.plot_veff.set_xdata([0.,np.max(self.thetas)])
+            self.plot_veff.set_ydata([0.,np.max(self.thetas)*np.tan(np.deg2rad(self.beta))])
+        else:
+            self.plot_veff.set_xdata([0.,np.min(self.thetas)])
+            self.plot_veff.set_ydata([0.,np.min(self.thetas)*np.tan(np.deg2rad(self.beta))])
+        th_par,th_ort = self.get_images_pos_array()
+        self.plot_images1.set_xdata(th_par[:,0])
+        self.plot_images1.set_ydata(th_ort[:,0])
+        self.plot_images2.set_xdata(th_par[:,1])
+        self.plot_images2.set_ydata(th_ort[:,1])
         self.figure.canvas.draw_idle()
         
     def get_images_pos_array(self):
         data = np.asarray(self.images)
         theta = np.array(data[:,0])
-        alpha = np.array(data[:,1])
-        th_par = theta*np.cos(np.deg2rad(alpha))
-        th_ort = theta*np.sin(np.deg2rad(alpha))
+        gamma = np.array(data[:,1])
+        th_par = np.empty((self.N_lines,2),dtype=float)
+        th_ort = np.empty((self.N_lines,2),dtype=float)
+        for i_im in range(self.N_lines):
+            #compute both possible alpha values and check if they are in range
+            if -1.<=gamma[i_im]*np.cos(np.deg2rad(self.beta))<=1.:
+                alpha1 = self.beta - np.rad2deg(np.arccos(gamma[i_im]*np.cos(np.deg2rad(self.beta))))
+                alpha2 = self.beta + np.rad2deg(np.arccos(gamma[i_im]*np.cos(np.deg2rad(self.beta))))
+                if alpha1 > 180.:
+                    alpha1 -= 360.
+                elif alpha1 <= 180.:
+                    alpha1 += 360.
+                if alpha2 > 180.:
+                    alpha2 -= 360.
+                elif alpha2 <= 180.:
+                    alpha2 += 360.
+                th_par[i_im,0] = theta[i_im]*np.cos(np.deg2rad(alpha1))
+                th_ort[i_im,0] = theta[i_im]*np.sin(np.deg2rad(alpha1))
+                th_par[i_im,1] = theta[i_im]*np.cos(np.deg2rad(alpha2))
+                th_ort[i_im,1] = theta[i_im]*np.sin(np.deg2rad(alpha2))
+            else:
+                th_par[i_im,0] = np.nan
+                th_ort[i_im,0] = np.nan
+                th_par[i_im,1] = np.nan
+                th_ort[i_im,1] = np.nan
         return (th_par,th_ort)
         
     def get_points_array(self):
@@ -552,8 +603,6 @@ class brightness():
         self.nu_half = specs['nu_half']
         self.veff = specs['veff']
         file_thetas = specs['file_thetas']
-        # self.file_points = specs['file_points']
-        # self.file_lines = specs['file_lines']
         self.thetas = np.load(file_thetas)
         self.N_th = len(self.thetas)
         self.thetas = -self.LightSpeed/self.nu_half/self.veff*self.thetas/self.mas
