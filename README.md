@@ -26,6 +26,7 @@ This plot shows your data. The red line shows the theoretical shape of the curre
 The red curve shows on the y axis the values of pixels in the theta-theta diagram along the red line there. The values on the x axis are determined by the location on the one-dimensional screen used to compute that line. The black curve shows the median of the brightness distribution of all saved lines as an approximation to the real brightness distribution. This plot can be used to validate an image candidate by checking if the features are at the same place as for the other images.
 
 ### Screen model (lower right corner)
+This plot shows screen solutions for the current data and parameters, in angular coordinates as viewed from earth. The x axis is aligned with the orientation of the screen, which is indicated by the solid blck line. The dashed line indicates the direction of the effective velocity. For each image all solutions are shown. There can be up to two solutions matching the same parameters, from which the first one is marked as a dot and the second one as a cross. The current images is marked in red.
 
 ### Widgets (upper right corner)
 
