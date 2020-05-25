@@ -4,11 +4,13 @@
 This is a graphical interface for the analysis of theta-theta diagrams. Example data and specifications are included.
 
 ## Prerequisites
-The script is ment to be executed with python3. Python2 compatibility is not tested. The following non-standard python packages are needed: 
-* NumPy (e.g. `pip3 install --upgrade --user numpy`)
-* SciPy (e.g. `pip3 install --upgrade --user scipy`)
-* Matplotlib (e.g. `pip3 install --upgrade --user matplotlib`)
+The script is ment to be executed with Python3. Python2 compatibility is not tested. The following non-standard python packages are needed: 
+* NumPy       (e.g. `pip3 install --upgrade --user numpy`)
+* SciPy       (e.g. `pip3 install --upgrade --user scipy`)
+* Matplotlib  (e.g. `pip3 install --upgrade --user matplotlib`)
 * ruamel.yaml (e.g. `pip3 install --upgrade --user ruamel.yaml`)
+
+After cloning, there is no installation necessary and a complete set of example data is included, such that the interface could be started immediately. To analyze your own data, you need to adapt __specs.yaml__ accordingly. _(More explanation will be added here)_
 
 ## Use
 In the download directory, the interface can be started via
