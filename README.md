@@ -41,5 +41,7 @@ _alpha_: angle of the image relative to the screen axis (0 on the right)
 
 _beta_: angle of the effective velocity relative to the screen axis (0 on the right)
 
-_gamma_: the combination of alpha and beta to which the theta-theta diagram and secondary spectrum are sensitive [__gamma = cos(beta-alpha)/cos(beta)__]
+_gamma_: the combination of alpha and beta to which the theta-theta diagram and secondary spectrum are sensitive 
+
+__gamma = cos(beta-alpha)/cos(beta)__
 
