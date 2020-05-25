@@ -34,6 +34,8 @@ This plot shows screen solutions for the current data and parameters, in angular
 * __3rd row:__ This row shows the location of the current point in numbers and a button which initializes a fit to find the best image parameters (theta and gamma) for the set of points belonging to the current line. The location of the current point can be either changed here or by right clicking in the theta-theta diagram. When using the fit, care needs to be taken to delete the last automatically created point at (0,0)! The fit only uses the saved points, such that the current coordinates are not regarded by the fit if not saved.
 * __4th row:__ This row contains the parameter range of the theta parameter, a button to anchor the reset values to the current values of the sliders and a button to reset the values of all sliders.
 * __sliders:__ The sliders can be used to change the three parameters that are relevant to the solutions. The values of theta and gamma determine the location and shape of the line, while beta changes the possible locations of the image on the screen matching this line. The following parameterization is used:
-> theta: absolute value of the coordinate vector of the image
-> alpha: angle of the image relative to the screen axis
+_theta_: absolute value of the coordinate vector of the image
+_alpha_: angle of the image relative to the screen axis (0 on the right)
+_beta_: angle of the effective velocity relative to the screen axis (0 on the right)
+_gamma_: the combination of alpha and beta to which the theta-theta diagram and secondary spectrum are sensitive [__gamma = cos(beta-alpha)/cos(beta)__]
 
