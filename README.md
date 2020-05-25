@@ -20,12 +20,13 @@ python3 scint_thth.py
 The interface consists of a number of widgets and plots. The idea is to use matplotlib's pan and zoom functions with the left mouse button for navigating and the right mouse button and the widgets to fit a screen model to the theta-theta diagram. In the following, the parts of the interface will be explained.
 
 ### Theta-Theta diagram (upper left corner)
-In addition to using the widget boxes, points in the diagram can be marked by right clicking.
-
-### Widgets (upper right corner)
+This plot shows your data. The red line shows the theoretical shape of the current image interfering with a perfectly one-dimensional screen. Only the horizontal solution is shown, while the corresponding vertical result of the interference with inversed order is hidden. The small red circle shows your currently marked feature. Its location can be changed right here by right clicking on the desired location or by using the widget. White circles show saved features of the same image and white lines show other saved images.
 
 ### Brightness distribution (lower left corner)
+The red curve shows on the y axis the values of pixels in the theta-theta diagram along the red line there. The values on the x axis are determined by the location on the one-dimensional screen used to compute that line. The black curve shows the median of the brightness distribution of all saved lines as an approximation to the real brightness distribution. This plot can be used to validate an image candidate by checking if the features are at the same place as for the other images.
 
 ### Screen model (lower right corner)
+
+### Widgets (upper right corner)
 
 
