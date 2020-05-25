@@ -10,7 +10,16 @@ The script is ment to be executed with Python3. Python2 compatibility is not tes
 * Matplotlib  (e.g. `pip3 install --upgrade --user matplotlib`)
 * ruamel.yaml (e.g. `pip3 install --upgrade --user ruamel.yaml`)
 
-After cloning, there is no installation necessary and a complete set of example data is included, such that the interface could be started immediately. To analyze your own data, you need to adapt __specs.yaml__ accordingly. _(More explanation will be added here)_
+After cloning, there is no installation necessary and a complete set of example data is included, such that the interface could be started immediately. To analyze your own data, you need to adapt __specs.yaml__ accordingly. If you only want to get used to the interface, you can skip the remaining part of this section.
+
+The following parameters need to be specified:
+* __file_thth__ specifies the path to a numpy _.npy_ file containing the theta theta diagram as an array with same dimensions on its two axes. The amplitude is given in linear scale (not logarithmic).
+* __file_thetas__ specifies the path to a numpy _.npy_ file containing the theta values from which the grid of the theta-theta diagram is created. As such, it is a one-dimensional array. These are the pseudo values of theta that are obtained when creating the theta-theta diagram without multiplication with the prefactor of the doppler rate. The theta values shown in the interface are created via theta=-light_speed/nu_half/veff*pseudo_thetas/milliarcseconds
+* __file_points__ and __file_lines__ specify the paths where the points and lines created using the interface will be saved as numpy _.npy_ files. These files do not need to exist yet.
+* __nu_half__ specifies the center frequency of the band.
+* __veff__ specifies the absolute value of the effective velocity.
+* __beta__ specifies the initial value of the angle of the effective velocity.
+* __thth_vmin__ and __thth_vmax__ specify the range of pixel values in the theta-theta diagram after applying a logarithmic scale.
 
 ## Use
 In the download directory, the interface can be started via
