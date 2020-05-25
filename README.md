@@ -17,5 +17,15 @@ In the download directory, the interface can be started via
 ```python
 python3 scint_thth.py
 ```
+The interface consists of a number of widgets and plots. The idea is to use matplotlib's pan and zoom functions with the left mouse button for navigating and the right mouse button and the widgets to fit a screen model to the theta-theta diagram. In the following, the parts of the interface will be explained.
 
+### Theta-Theta diagram (upper left corner)
 In addition to using the widget boxes, points in the diagram can be marked by right clicking.
+
+### Widgets (upper right corner)
+
+### Brightness distribution (lower left corner)
+
+### Screen model (lower right corner)
+
+
