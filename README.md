@@ -5,7 +5,7 @@ This is a graphical interface for the analysis of theta-theta diagrams. Example 
 
 ## Prerequisites
 The script is ment to be executed with python3. Python2 compatibility is not tested. The following python packages are needed: 
-* NumPy
+* NumPy (e.g. `pip3 install --upgrade --user numpy`)
 * SciPy
 * math
 * os
