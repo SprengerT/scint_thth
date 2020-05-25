@@ -13,5 +13,9 @@ The script is ment to be executed with python3. Python2 compatibility is not tes
 * ruamel.yaml
 
 ## Use
+In the download directory, the interface can be started via
+```python
+python3 scint_thth.py
+```
 
 In addition to using the widget boxes, points in the diagram can be marked by right clicking.
