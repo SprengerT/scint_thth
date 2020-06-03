@@ -1,10 +1,12 @@
 import numpy as np
+from numpy import newaxis as na
 import matplotlib as mpl
 #mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 import math
 from ruamel.yaml import YAML
 import os
+from scipy import interpolate
 from scipy.optimize import curve_fit
 
 #class SS
@@ -16,7 +18,7 @@ class thth():
     LightSpeed = 299792458. #m/s
     mas = 1./1000.*math.pi/648000. #mas in radians
 
-    def __init__(self,file_specs,figure,ax,images,brightness):
+    def __init__(self,file_specs,figure,ax,images,brightness,thth_corr):
         #load specifications
         yaml = YAML(typ='safe')
         with open(file_specs,'r') as readfile:
@@ -33,6 +35,8 @@ class thth():
         i_line,i_point = self.images.tidy_up()
         #initialize mu
         self.brightness = brightness
+        #initialize corrected thth
+        self.thth_corr = thth_corr
         #load thth
         self.thth = np.load(file_thth)
         #load thetas
@@ -59,7 +63,7 @@ class thth():
         vmax = specs.get('thth_vmax',float(np.max(self.thth_log10)))
         # - draw the plot
         self.plot_thth_grid = self.ax.pcolormesh((self.thetas-offset),(self.thetas-offset),np.swapaxes(self.thth_log10,0,1),cmap=cmap,vmin=vmin,vmax=vmax)
-        self.figure.colorbar(self.plot_thth_grid, ax=self.ax)
+        #self.figure.colorbar(self.plot_thth_grid, ax=self.ax)
         
         #plot found lines
         self.plot_lines = []
@@ -117,7 +121,7 @@ class thth():
         
     def create_widgets(self,xmin,ymin,xmax,ymax):
         #compute locations
-        nrows = 7
+        nrows = 8
         ncols = 3
         yspace = 0.02
         xspace = 0.02
@@ -132,22 +136,24 @@ class thth():
         self.update_thth_curve(theta,gamma)
         points = self.images.get_points_array()
         #initialize widgets for the curve
-        self.slider_th = mpl.widgets.Slider(plt.axes([xpos[0],ypos[2],xfullwidth,ywidth]),r'$\theta$',0.,30.,valinit=theta)
-        self.slider_gamma = mpl.widgets.Slider(plt.axes([xpos[0],ypos[1],xfullwidth,ywidth]),r'$\gamma$',-1./np.cos(np.deg2rad(self.beta)),1./np.cos(np.deg2rad(self.beta)),valinit=gamma)
-        self.slider_beta = mpl.widgets.Slider(plt.axes([xpos[0],ypos[0],xfullwidth,ywidth]),r'$\beta$',-180.,180.,valinit=self.beta)
-        self.button_reset = mpl.widgets.Button(plt.axes([xpos[2],ypos[3],xwidth,ywidth]), 'Reset')
-        self.button_anchor = mpl.widgets.Button(plt.axes([xpos[1],ypos[3],xwidth,ywidth]), 'Anchor')
-        self.box_th_range = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[3],xwidth,ywidth]), r'$\Delta\theta$', initial="30.0")
+        self.slider_th = mpl.widgets.Slider(plt.axes([xpos[0],ypos[3],xfullwidth,ywidth]),r'$\theta$',0.,30.,valinit=theta)
+        self.slider_gamma = mpl.widgets.Slider(plt.axes([xpos[0],ypos[2],xfullwidth,ywidth]),r'$\gamma$',-1./np.cos(np.deg2rad(self.beta)),1./np.cos(np.deg2rad(self.beta)),valinit=gamma)
+        self.slider_beta = mpl.widgets.Slider(plt.axes([xpos[0],ypos[1],xfullwidth,ywidth]),r'$\beta$',-180.,180.,valinit=self.beta)
+        self.button_reset = mpl.widgets.Button(plt.axes([xpos[2],ypos[4],xwidth,ywidth]), 'Reset')
+        self.button_anchor = mpl.widgets.Button(plt.axes([xpos[1],ypos[4],xwidth,ywidth]), 'Anchor')
+        self.box_th_range = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[4],xwidth,ywidth]), r'$\Delta\theta$', initial="30.0")
         #initialize widgets for the images
-        self.box_th1 = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[4],xwidth,ywidth]), r'$\theta_1$', initial=str(points[0,0]))
-        self.box_th2 = mpl.widgets.TextBox(plt.axes([xpos[1],ypos[4],xwidth,ywidth]), r'$\theta_2$', initial=str(points[0,1]))
-        self.button_fit_points = mpl.widgets.Button(plt.axes([xpos[2],ypos[4],xwidth,ywidth]), r'fit points')
-        self.box_point_number = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[5],xwidth,ywidth]), r'#p', initial=str(self.images.i_point))
-        self.button_delete_point = mpl.widgets.Button(plt.axes([xpos[1],ypos[5],xwidth,ywidth]), r'delete point')
-        self.button_save_point = mpl.widgets.Button(plt.axes([xpos[2],ypos[5],xwidth,ywidth]), r'save point')
-        self.box_line_number = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[6],xwidth,ywidth]), r'#l', initial=str(self.images.i_line))
-        self.button_delete_line = mpl.widgets.Button(plt.axes([xpos[1],ypos[6],xwidth,ywidth]), r'delete line')
-        self.button_save_line = mpl.widgets.Button(plt.axes([xpos[2],ypos[6],xwidth,ywidth]), r'save line')
+        self.box_th1 = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[5],xwidth,ywidth]), r'$\theta_1$', initial=str(points[0,0]))
+        self.box_th2 = mpl.widgets.TextBox(plt.axes([xpos[1],ypos[5],xwidth,ywidth]), r'$\theta_2$', initial=str(points[0,1]))
+        self.button_fit_points = mpl.widgets.Button(plt.axes([xpos[2],ypos[5],xwidth,ywidth]), r'fit points')
+        self.box_point_number = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[6],xwidth,ywidth]), r'#p', initial=str(self.images.i_point))
+        self.button_delete_point = mpl.widgets.Button(plt.axes([xpos[1],ypos[6],xwidth,ywidth]), r'delete point')
+        self.button_save_point = mpl.widgets.Button(plt.axes([xpos[2],ypos[6],xwidth,ywidth]), r'save point')
+        self.box_line_number = mpl.widgets.TextBox(plt.axes([xpos[0],ypos[7],xwidth,ywidth]), r'#l', initial=str(self.images.i_line))
+        self.button_delete_line = mpl.widgets.Button(plt.axes([xpos[1],ypos[7],xwidth,ywidth]), r'delete line')
+        self.button_save_line = mpl.widgets.Button(plt.axes([xpos[2],ypos[7],xwidth,ywidth]), r'save line')
+        #initialize widgets for the corrected diagram
+        self.button_correct = mpl.widgets.Button(plt.axes([xpos[0],ypos[0],xwidth,ywidth]), r'correct')
         #tell widgets what to do on use
         self.slider_th.on_changed(self.update_curve_widget_values)
         self.slider_gamma.on_changed(self.update_curve_widget_values)
@@ -164,6 +170,7 @@ class thth():
         self.box_line_number.on_submit(self.change_line_number)
         self.button_delete_line.on_clicked(self.delete_line)
         self.button_save_line.on_clicked(self.submit_line)
+        self.button_correct.on_clicked(self.correct_thth)
         
         #add point position by clicking
         self.figure.canvas.mpl_connect('button_press_event', self.onclick)
@@ -333,26 +340,35 @@ class thth():
         self.brightness.update_mu_plot(brightness)
         
     def update_mus(self):
-        lines = np.asarray(self.images.images)
-        N_lines = len(lines)
-        th1 = np.empty((N_lines,self.N_th),dtype=float)
-        th2 = np.empty((N_lines,self.N_th),dtype=float)
-        for index in range(N_lines):
-            th1[index,:],th2[index,:] = self.get_thth_curve(lines[index,0],lines[index,1])
-        minth = np.min(self.thetas)
-        maxth = np.max(self.thetas)
-        spanth = maxth-minth
-        brightness = np.zeros((N_lines,self.N_th),dtype=float)
-        for i_line in range(N_lines):
-            i1 = np.zeros(self.N_th,dtype=int)
-            i2 = np.zeros(self.N_th,dtype=int)
-            for i_th in range(self.N_th):
-                i1[i_th] = self.N_th-int((th1[i_line,i_th]-minth)/spanth*self.N_th+0.5)
-                i2[i_th] = self.N_th-int((th2[i_line,i_th]-minth)/spanth*self.N_th+0.5)
-                try:
-                    brightness[i_line,i_th] = self.thth_log10[i1[i_th],i2[i_th]]
-                except:
-                    pass
+#        lines = np.asarray(self.images.images)
+#        N_lines = len(lines)
+#        th1 = np.empty((N_lines,self.N_th),dtype=float)
+#        th2 = np.empty((N_lines,self.N_th),dtype=float)
+#        for index in range(N_lines):
+#            th1[index,:],th2[index,:] = self.get_thth_curve(lines[index,0],lines[index,1])
+#        minth = np.min(self.thetas)
+#        maxth = np.max(self.thetas)
+#        spanth = maxth-minth
+#        brightness = np.zeros((N_lines,self.N_th),dtype=float)
+#        for i_line in range(N_lines):
+#            i1 = np.zeros(self.N_th,dtype=int)
+#            i2 = np.zeros(self.N_th,dtype=int)
+#            for i_th in range(self.N_th):
+#                i1[i_th] = self.N_th-int((th1[i_line,i_th]-minth)/spanth*self.N_th+0.5)
+#                i2[i_th] = self.N_th-int((th2[i_line,i_th]-minth)/spanth*self.N_th+0.5)
+#                try:
+#                    brightness[i_line,i_th] = self.thth_log10[i1[i_th],i2[i_th]]
+#                except:
+#                    pass
+#        self.brightness.update_mus_plot(brightness)
+        pass
+        
+    def correct_thth(self,event):
+        #get interpolation of (theta,gamma) values
+        theta,gamma = self.images.get_theta_gamma_arrs()
+        #plot corrected thth diagram
+        brightness = self.thth_corr.replot(theta,gamma)
+        #update brightness plot
         self.brightness.update_mus_plot(brightness)
         
 class images():
@@ -451,7 +467,7 @@ class images():
     def fit_thth_curve(self,fitfunc,theta,gamma):
         data = np.array(self.matrix[self.i_line])
         popt, pcov = curve_fit(fitfunc,data[:,0],data[:,1],p0=[theta,gamma],bounds=([0.,-1./np.cos(np.deg2rad(self.beta))],[np.max(self.thetas),1./np.cos(np.deg2rad(self.beta))]))
-        perr = np.sqrt(np.diag(pcov))
+        #perr = np.sqrt(np.diag(pcov))
         fit_theta = popt[0]
         fit_gamma = popt[1]
         return (fit_theta,fit_gamma)
@@ -491,7 +507,6 @@ class images():
         else:
             self.N_lines += 1
             self.i_line = self.N_lines - 1
-            data = np.asarray(self.images)
             self.images.append([0.,1.])
             self.matrix.append([[0.,0.]])
         self.N_points = len(self.matrix[self.i_line])
@@ -590,6 +605,26 @@ class images():
     def get_image_array(self):
         line = np.asarray(self.images[self.i_line])
         return line
+    
+    def get_theta_gamma_arrs(self):
+        #get sorted arrays of images
+        thetas = np.empty(self.N_lines,dtype=float)
+        gammas = np.empty(self.N_lines,dtype=float)
+        for i_line in range(self.N_lines):
+            thetas[i_line] = self.images[i_line][0]
+            gammas[i_line] = self.images[i_line][1]
+            if gammas[i_line] < 0.:
+                thetas[i_line] *= -1.
+                gammas[i_line] *= -1.
+        indices = np.argsort(thetas)
+        thetas = thetas[indices]
+        gammas = gammas[indices]
+        #interpolate gamma(theta)
+        ip = interpolate.interp1d(thetas,gammas,kind='cubic',fill_value=1.,bounds_error=False)
+        gamma = np.empty(self.N_th,dtype=float)
+        for i_th in range(self.N_th):
+            gamma[i_th] = ip(self.thetas[i_th])
+        return (self.thetas,gamma)
         
 class brightness():
     LightSpeed = 299792458. #m/s
@@ -615,8 +650,33 @@ class brightness():
         self.ax.set_xlabel(r"$\theta$ [mas]")
         self.ax.set_ylabel(r"$\mu$")
         self.ax.set_title(r'brightness $\mu$')
-        self.plot_mus = []
-        self.plot_median, = self.ax.plot(self.thetas,np.zeros(self.thetas.shape,dtype=float),color='black',alpha=0.8,label="median")
+#        self.plot_mus = []
+#        self.plot_median, = self.ax.plot(self.thetas,np.zeros(self.thetas.shape,dtype=float),color='black',alpha=0.8,label="median")
+#        self.plot_brightness, = self.ax.plot(self.thetas,np.zeros(self.thetas.shape,dtype=float),color='red',alpha=0.8,label="current")
+#        self.ax.legend()
+#        
+#    def update_mu_plot(self,brightness):
+#        self.plot_brightness.set_ydata(brightness)
+#        self.figure.canvas.draw_idle()
+#        
+#    def update_mus_plot(self,mus):
+#        N_mu = len(mus)
+#        N_plots = len(self.plot_mus)
+#        for index in range(N_mu):
+#            if index < N_plots:
+#                self.plot_mus[index].set_ydata(mus[index,:])
+#            else:
+#                self.plot_mus.append(self.ax.plot(self.thetas,mus[index,:],color='lightblue',linestyle='-',alpha=0.,linewidth=1)[0])
+#        if N_mu<N_plots:
+#            for index in range(N_mu,N_plots):
+#                self.plot_mus[index].remove()
+#            del self.plot_mus[N_mu:N_plots]
+#        if not N_mu==0:
+#            mus_median = np.median(mus,axis=0)
+#            self.plot_median.set_ydata(mus_median)
+#        self.figure.canvas.draw_idle()
+        
+        self.plot_brightness_true, = self.ax.plot(self.thetas,np.zeros(self.thetas.shape,dtype=float),color='black',alpha=0.8,label="estimate")
         self.plot_brightness, = self.ax.plot(self.thetas,np.zeros(self.thetas.shape,dtype=float),color='red',alpha=0.8,label="current")
         self.ax.legend()
         
@@ -625,21 +685,91 @@ class brightness():
         self.figure.canvas.draw_idle()
         
     def update_mus_plot(self,mus):
-        N_mu = len(mus)
-        N_plots = len(self.plot_mus)
-        for index in range(N_mu):
-            if index < N_plots:
-                self.plot_mus[index].set_ydata(mus[index,:])
-            else:
-                self.plot_mus.append(self.ax.plot(self.thetas,mus[index,:],color='lightblue',linestyle='-',alpha=0.,linewidth=1)[0])
-        if N_mu<N_plots:
-            for index in range(N_mu,N_plots):
-                self.plot_mus[index].remove()
-            del self.plot_mus[N_mu:N_plots]
-        if not N_mu==0:
-            mus_median = np.median(mus,axis=0)
-            self.plot_median.set_ydata(mus_median)
+        self.plot_brightness_true.set_ydata(mus)
         self.figure.canvas.draw_idle()
+        
+class thth_corr():
+    LightSpeed = 299792458. #m/s
+    mas = 1./1000.*math.pi/648000. #mas in radians
+    
+    def __init__(self,file_specs,figure,ax):
+        #initialize data
+        yaml = YAML(typ='safe')
+        with open(file_specs,'r') as readfile:
+            specs = yaml.load(readfile)
+        file_thth = specs['file_thth']
+        file_thetas = specs['file_thetas']
+        self.nu_half = specs['nu_half']
+        self.veff = specs['veff']
+        self.beta = specs['beta']
+        self.ax = ax
+        self.figure = figure
+        self.thth = np.load(file_thth)
+        #load thetas
+        self.thetas = np.load(file_thetas)
+        self.N_th = len(self.thetas)
+        self.thetas = -self.LightSpeed/self.nu_half/self.veff*self.thetas/self.mas
+        #create logarithmic thth
+        self.thth_log10 = np.copy(self.thth)
+        self.min_nonzero = np.min(self.thth_log10[np.nonzero(self.thth_log10)])
+        self.thth_log10[self.thth_log10 == 0] = self.min_nonzero
+        self.thth_log10 = np.log10(self.thth_log10)
+        
+        #plot thth
+        # - axis properties
+        ax.set_xlim([float(np.min(self.thetas)),float(np.max(self.thetas))])
+        ax.set_ylim([float(np.min(self.thetas)),float(np.max(self.thetas))])
+        ax.set_title(r"corrected $\theta$-$\theta$ diagram")
+        ax.set_xlabel(r"$\theta_1$ [mas]")
+        ax.set_ylabel(r"$\theta_2$ [mas]")
+        # - colormesh specifications
+        self.offset = (self.thetas[1]-self.thetas[0])/2.
+        self.cmap = 'viridis'
+        self.vmin = specs.get('thth_vmin',float(np.min(self.thth_log10)))
+        self.vmax = specs.get('thth_vmax',float(np.max(self.thth_log10)))
+        # - draw the plot
+        self.plot_thth_grid = self.ax.pcolormesh((self.thetas-self.offset),(self.thetas-self.offset),np.swapaxes(self.thth_log10,0,1),cmap=self.cmap,vmin=self.vmin,vmax=self.vmax)
+        
+    def replot(self,theta,gamma):
+        #create thth coordinates
+        th1 = 0.5*((theta[:,na]**2-theta[na,:]**2)/(gamma[:,na]*theta[:,na]-gamma[na,:]*theta[na,:])+gamma[:,na]*theta[:,na]-gamma[na,:]*theta[na,:])
+        th2 = 0.5*((theta[:,na]**2-theta[na,:]**2)/(gamma[:,na]*theta[:,na]-gamma[na,:]*theta[na,:])-gamma[:,na]*theta[:,na]+gamma[na,:]*theta[na,:])
+        #evaluate pixels in thth along these coordinates
+        minth = np.min(self.thetas)
+        maxth = np.max(self.thetas)
+        spanth = maxth-minth
+        data = np.zeros((self.N_th,self.N_th),dtype=float)
+        for i_th1 in range(self.N_th):
+            for i_th2 in range(self.N_th):
+                try:
+                    i1 = self.N_th-int((th1[i_th1,i_th2]-minth)/spanth*self.N_th+0.5)
+                    i2 = self.N_th-int((th2[i_th1,i_th2]-minth)/spanth*self.N_th+0.5)
+                    data[i_th1,i_th2] = self.thth[i1,i2]
+                except:
+                    data[i_th1,i_th2] = self.min_nonzero
+        data_log10 = np.copy(data)
+        data_log10[data_log10 == 0] = self.min_nonzero
+        data_log10 = np.log10(data_log10)
+        #update the plot
+        self.plot_thth_grid = self.ax.pcolormesh((self.thetas-self.offset),(self.thetas-self.offset),np.swapaxes(data_log10,0,1),cmap=self.cmap,vmin=self.vmin,vmax=self.vmax)
+#        #take dominant eigenvector as brightness distribution (does not work yet!)
+#        eigenvalues, eigenvectors = np.linalg.eig(data)
+#        amplitude = np.sqrt(np.max(np.abs(eigenvalues)))
+#        i_amp = np.where(eigenvalues==np.max(np.abs(eigenvalues)))[0][0]
+#        mu = amplitude**2*np.abs(eigenvectors[:,i_amp])
+        #take 0 line as estimation
+        #mu = data_log10[:,int(self.N_th/2)]
+        #mu = np.median(data,axis=1)
+        mu = np.empty((self.N_th),dtype=float)
+        for i_th in range(self.N_th):
+            mu[i_th] = np.nanmedian(np.nanmedian(data[:,i_th,na]/data[:,:],axis=0))
+        mu *= np.nanmedian(data,axis=1)
+        min_nonzero = np.min(mu[np.nonzero(mu)])
+        mu[mu == 0] = min_nonzero
+        mu = np.log10(mu)
+        print(mu)
+        return mu
+        
     
 if __name__ == "__main__":
     #set up the canvas
@@ -649,22 +779,24 @@ if __name__ == "__main__":
     plot_bottom = 0.05
     plot_top = 0.95
     plot_left = 0.06
-    plot_right = 0.75
+    plot_right = 0.95
     plot_wspace = 0.2
     plot_hspace = 0.2
     # - create figure and axes
     figure = plt.figure(figsize=(plot_width/plot_dpi,plot_height/plot_dpi),dpi=plot_dpi)
     plt.subplots_adjust(bottom=plot_bottom,top=plot_top,left=plot_left,right=plot_right,wspace=plot_wspace,hspace=plot_hspace)
-    ax_thth = figure.add_subplot(2,1,1)
-    ax_mu = figure.add_subplot(2,2,3)
-    ax_screen = figure.add_subplot(2,2,4)
+    ax_thth = figure.add_subplot(2,2,1)
+    ax_mu = figure.add_subplot(2,3,4)
+    ax_screen = figure.add_subplot(2,3,5)
+    ax_thth_corr = figure.add_subplot(2,3,6)
     
     #initialize plots
     file_specs = "specs.yaml"
     plot_images = images(file_specs,figure,ax_screen)
     plot_brightness = brightness(file_specs,figure,ax_mu)
-    plot_thth = thth(file_specs,figure,ax_thth,plot_images,plot_brightness)
-    plot_thth.create_widgets(0.71, 0.55, 0.95, 0.90)
+    plot_thth_corr = thth_corr(file_specs,figure,ax_thth_corr)
+    plot_thth = thth(file_specs,figure,ax_thth,plot_images,plot_brightness,plot_thth_corr)
+    plot_thth.create_widgets(0.55, 0.55, 0.90, 0.95)
     
     #show the fitter and tidy up
     plt.show()
