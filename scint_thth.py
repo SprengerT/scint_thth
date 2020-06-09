@@ -2,6 +2,8 @@ import numpy as np
 from numpy import newaxis as na
 import matplotlib as mpl
 #mpl.use('TkAgg')
+import matplotlib.style as mplstyle
+mplstyle.use('fast')
 import matplotlib.pyplot as plt
 import math
 from ruamel.yaml import YAML
@@ -767,7 +769,6 @@ class thth_corr():
         min_nonzero = np.min(mu[np.nonzero(mu)])
         mu[mu == 0] = min_nonzero
         mu = np.log10(mu)
-        print(mu)
         return mu
         
     
