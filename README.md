@@ -1,7 +1,7 @@
 # scint_thth
 
 ## General
-This is a graphical interface for the analysis of theta-theta diagrams. Example data and specifications are included.
+This is a graphical interface for the analysis of theta-theta diagrams. Example data and specifications are included. They match the data described in arXiv:2008.09443. However, the large size of this data set slows the interface dramatically.
 
 ## Prerequisites
 The script is ment to be executed with Python3. Python2 compatibility is not tested. The following non-standard python packages are needed: 
@@ -28,13 +28,13 @@ python3 scint_thth.py
 ```
 The interface consists of a number of widgets and plots. The idea is to use matplotlib's pan and zoom functions with the left mouse button for navigating and the right mouse button and the widgets to fit a screen model to the theta-theta diagram. In the following, the parts of the interface will be explained.
 
-### Theta-Theta diagram (upper left corner)
+### Theta-Theta diagram (left column)
 This plot shows your data. The red line shows the theoretical shape of the current image interfering with a perfectly one-dimensional screen. Only the horizontal solution is shown, while the corresponding vertical result of the interference with inversed order is hidden. The small red circle shows your currently marked feature. Its location can be changed right here by right clicking on the desired location or by using the widget. White circles show saved features of the same image and white lines show other saved images.
 
-### Brightness distribution (lower left corner)
+### Brightness distribution (lower left corner (left))
 The red curve shows on the y axis the values of pixels in the theta-theta diagram along the red line there. The values on the x axis are determined by the location on the one-dimensional screen used to compute that line. The black curve shows the median of the brightness distribution of all saved lines as an approximation to the real brightness distribution. This plot can be used to validate an image candidate by checking if the features are at the same place as for the other images.
 
-### Screen model (lower right corner)
+### Screen model (lower left corner (right))
 This plot shows screen solutions for the current data and parameters, in angular coordinates as viewed from earth. The x axis is aligned with the orientation of the screen, which is indicated by the solid black line. The dashed line indicates the direction of the effective velocity. For each image all solutions are shown. There can be up to two solutions matching the same parameters, from which the first one is marked as a dot and the second one as a cross. The current images is marked in red.
 
 ### Widgets (upper right corner)
